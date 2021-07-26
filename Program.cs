@@ -13,7 +13,7 @@ class Program {
 }
 
 public static class Parameters {
-    public static int DimZ = 3;
+    public static int DimZ = 4;
     public static int MaxLayer = 3;
 }
 
@@ -24,43 +24,38 @@ public class Bay2DAgent {
     public int maxLabel = (Parameters.DimZ - 1) * Parameters.MaxLayer + 1;
     public Stack<Relocation> relocations;
 
-    public void ResetEnv() {
+    public async void ResetEnv() {
 
-        if (count++ >= 1) {
-            Evaluation.Print();
-            return;
+        while (count++ < 10) {
+            relocations = null;
+            bay = new Bay(Parameters.DimZ, Parameters.MaxLayer, maxLabel);
+            Console.WriteLine(bay);
+            await Simulate();
+            Console.WriteLine("instance finish");
         }
-        relocations = null;
-        bay = new Bay(Parameters.DimZ, Parameters.MaxLayer, maxLabel);
-        // this layout got bug
-        //var layout = new List<Container2D>[2];
-        //layout[0] = new List<Container2D>() { new Container2D(2) };
-        //layout[1] = new List<Container2D>() { new Container2D(1), new Container2D(3), new Container2D(4) };
-        //bay = new Bay(layout);
-        Simulate();
+        Evaluation.Print();
     }
 
-    public async void Simulate() {
+    public async Task Simulate() {
         var resultRelocationQueue = new Queue<Relocation>();
         var b = new Bay(bay.Layout);
         var topNode = new TreeNode<NodeInfo>(new NodeInfo(b.Layout, null), null);
-        await TraverseTree(topNode).ContinueWith(_ => {
-            while (relocations.Count > 0) {
-                resultRelocationQueue.Enqueue(relocations.Pop());
-            }
-            Console.WriteLine(resultRelocationQueue.Count);
-        });
+        var start = DateTime.Now;
+        await TraverseTree(topNode);
+        while (relocations.Count > 0) {
+            resultRelocationQueue.Enqueue(relocations.Pop());
+        }
+        var end = DateTime.Now;
+        Evaluation.UpdateValue(b.MaxLabel, resultRelocationQueue.Count, end - start);
 
     }
 
     public async Task TraverseTree(TreeNode<NodeInfo> node) {
         var b = new Bay(node.Body.Bay.Layout);
-        Console.WriteLine(b);
         while (b.canRetrieve) {
             b.retrieve();
         }
         if (b.empty) {
-            Console.WriteLine("traverse ends");
             var rs = new Stack<Relocation>();
             TreeNode<NodeInfo> pNode = node;
             while (pNode != null) {
@@ -70,6 +65,15 @@ public class Bay2DAgent {
             }
             if (relocations == null || relocations.Count > rs.Count) relocations = rs;
         }
+
+        // check exceeds max recursion times
+        int ps = 0;
+        var p = node.Parent;
+        while (p != null) {
+            p = p.Parent;
+            ps++;
+        }
+        if (ps > b.MaxLabel) return;
 
         for (int z0 = 0; z0 < b.DimZ; z0++) {
             for (int z1 = 0; z1 < b.DimZ; z1++) {
