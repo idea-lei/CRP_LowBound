@@ -163,7 +163,7 @@ public class Bay {
     }
 
     public bool IndexFull(int z) {
-        return layout[z].Count >= DimZ;
+        return layout[z].Count >= MaxTier;
     }
 
     public bool IndexEmpty(int z) {
