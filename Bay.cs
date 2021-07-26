@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public struct Relocation {
+public class Relocation {
     public int z0;
     public int z1;
     public Relocation(int _z0, int _z1) {
@@ -75,9 +75,6 @@ public class Bay {
 
     private int maxLabel;
     public int MaxLabel => maxLabel;
-    public LastOperation lastOperation;
-
-    public Queue<Relocation> RelocationQueue;
 
     /// <summary>
     /// this property is for observation, the first element is stack bottom, last is top
@@ -147,15 +144,12 @@ public class Bay {
         DimZ = z;
         maxLabel = _maxLabel;
         assignValues(generateSequence(_maxLabel));
-        RelocationQueue = new Queue<Relocation>();
     }
 
-    public Bay(List<Container2D>[] _layout, Queue<Relocation> rQueue, LastOperation last) {
-        RelocationQueue = new Queue<Relocation>(rQueue);
+    public Bay(List<Container2D>[] _layout) {
         DimZ = _layout.Length;
         maxLabel = _layout.Max(l => l.Count > 0 ? l.Max(c => c.priority) : 0);
         MaxTier = (maxLabel - 1) / (DimZ - 1);
-        lastOperation = last;
 
         layout = new Stack<Container2D>[DimZ];
         for (int z = 0; z < DimZ; z++) {
@@ -269,6 +263,27 @@ public class Bay {
         }
         return sb.ToString();
     }
+
+    public static bool operator ==(Bay a, Bay b) {
+        if (a.DimZ != b.DimZ) return false;
+        if (a.MaxTier != b.MaxTier) return false;
+        if (a.maxLabel != b.maxLabel) return false;
+        for (int z = 0; z < a.DimZ; z++) {
+            if (a.Layout[z].Count != b.Layout[z].Count) return false;
+            if (a.Layout[z].Count == 0) continue;
+
+            var aArr = a.Layout[z].ToArray();
+            var bArr = b.Layout[z].ToArray();
+            for (int t = 0; t < aArr.Length; t++)
+                if (aArr[t] != bArr[t])
+                    return false;
+        }
+        return true;
+    }
+
+    public static bool operator !=(Bay a, Bay b) {
+        return !(a == b);
+    }
 }
 
 public struct LastOperation {
@@ -301,18 +316,5 @@ public struct LastOperation {
 
     public override int GetHashCode() {
         return base.GetHashCode();
-    }
-}
-
-public static class Evaluation {
-    private static int TotalContainerOut = 0;
-    private static int TotalRelocation = 0;
-    public static void UpdateValue(int o, int r) {
-        TotalContainerOut += o;
-        TotalRelocation += r;
-    }
-
-    public static void Print() {
-        Console.WriteLine($"TotalContainerOut: {TotalContainerOut}, TotalRelocation: {TotalRelocation}");
     }
 }
