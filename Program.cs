@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 class Program {
     static void Main(string[] args) {
         var ts = new List<Task>();
-        for (int _ = 0; _ < 70; _++) {
+        for (int _ = 0; _ < 20; _++) {
             var task = Task.Factory.StartNew(initAgent);
             ts.Add(task);
         }
@@ -40,7 +40,7 @@ public class Bay2DAgent {
 
     public async void ResetEnv() {
 
-        while (count++ < 5) {
+        while (count++ < 10) {
             relocations = null;
             bay = new Bay(Parameters.DimZ, Parameters.MaxLayer, maxLabel);
             Console.WriteLine(bay);
