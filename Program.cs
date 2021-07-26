@@ -8,6 +8,14 @@ using System.Threading.Tasks;
 
 class Program {
     static void Main(string[] args) {
+        for (int _ = 0; _ < 100; _++) {
+            var childRef = new ThreadStart(initAgent);
+            Thread childThread = new Thread(childRef);
+            childThread.Start();
+        }
+    }
+
+    static void initAgent() {
         var agent = new Bay2DAgent();
         agent.ResetEnv();
     }
