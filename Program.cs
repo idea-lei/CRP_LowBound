@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 class Program {
@@ -22,6 +23,7 @@ public class Bay2DAgent {
 
     public Bay bay;
     public int maxLabel = (Parameters.DimZ - 1) * Parameters.MaxLayer + 1;
+    public int instanceNum;
     public Stack<Relocation> relocations;
 
     public async void ResetEnv() {
@@ -41,16 +43,15 @@ public class Bay2DAgent {
         var b = new Bay(bay.Layout);
         var topNode = new TreeNode<NodeInfo>(new NodeInfo(b.Layout, null), null);
         var start = DateTime.Now;
-        await TraverseTree(topNode);
+        await Traverse(topNode);
         while (relocations.Count > 0) {
             resultRelocationQueue.Enqueue(relocations.Pop());
         }
         var end = DateTime.Now;
         Evaluation.UpdateValue(b.MaxLabel, resultRelocationQueue.Count, end - start);
-
     }
 
-    public async Task TraverseTree(TreeNode<NodeInfo> node) {
+    public async Task Traverse(TreeNode<NodeInfo> node) {
         var b = new Bay(node.Body.Bay.Layout);
         while (b.canRetrieve) {
             b.retrieve();
@@ -70,8 +71,10 @@ public class Bay2DAgent {
         int ps = 0;
         var p = node.Parent;
         while (p != null) {
+            if (p.Body.Bay == b) return;
             p = p.Parent;
             ps++;
+            if (relocations != null && relocations.Count > 0 && ps > relocations.Count + 1) return;
         }
         if (ps > b.MaxLabel) return;
 
@@ -83,16 +86,8 @@ public class Bay2DAgent {
                 var r = new Relocation(z0, z1);
                 newB.relocate(r);
 
-                TreeNode<NodeInfo> pNode = node;
-                while (pNode != null) {
-                    // if repeat layout
-                    if (pNode.Body.Bay == newB) break;
-                    pNode = pNode.Parent;
-                }
-                if (pNode != null) continue;
-
                 var child = new TreeNode<NodeInfo>(new NodeInfo(newB.Layout, r), node);
-                await TraverseTree(child);
+                await Traverse(child);
             }
         }
     }
