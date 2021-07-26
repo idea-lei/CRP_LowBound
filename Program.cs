@@ -8,12 +8,16 @@ using System.Threading.Tasks;
 
 class Program {
     static void Main(string[] args) {
-        for (int _ = 0; _ < 100; _++) {
-            var childRef = new ThreadStart(initAgent);
-            Thread childThread = new Thread(childRef);
-            childThread.Start();
+        var ts = new List<Task>();
+        for (int _ = 0; _ < 70; _++) {
+            var task = Task.Factory.StartNew(initAgent);
+            ts.Add(task);
         }
+        Task.WaitAll(ts.ToArray());
+        Evaluation.Print();
     }
+
+
 
     static void initAgent() {
         var agent = new Bay2DAgent();
@@ -23,7 +27,7 @@ class Program {
 
 public static class Parameters {
     public static int DimZ = 4;
-    public static int MaxLayer = 3;
+    public static int MaxLayer = 4;
 }
 
 public class Bay2DAgent {
@@ -36,14 +40,13 @@ public class Bay2DAgent {
 
     public async void ResetEnv() {
 
-        while (count++ < 10) {
+        while (count++ < 5) {
             relocations = null;
             bay = new Bay(Parameters.DimZ, Parameters.MaxLayer, maxLabel);
             Console.WriteLine(bay);
             await Simulate();
             Console.WriteLine("instance finish");
         }
-        Evaluation.Print();
     }
 
     public async Task Simulate() {
